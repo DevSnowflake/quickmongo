@@ -1,4 +1,7 @@
 node_modules/
-yarn.lock
-
-test
+lib/
+.vscode/
+docs/
+test/
+dev/
+yarn-error.log

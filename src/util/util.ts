@@ -1,13 +1,12 @@
-const _ = require("lodash");
-const Error = require("./Error");
+import _ from 'lodash';
+import Error from './QuickMongoError';
 
 class Util {
-
     /**
      * **You _cannot instantiate_ Util class. Every methods of this class are `static` methods.**
      */
     constructor() {
-        throw new Error(`Class ${this.constructor.name} may not be instantiated!`);
+        throw new Error(`Class ${this.constructor.name} may not be instantiated!`, 'InstantiationError');
     }
 
     /**
@@ -15,8 +14,8 @@ class Util {
      * @param {any} str Anything to test
      * @returns {boolean}
      */
-    static isKey(str) {
-        return typeof str === "string";
+    static isKey(str: any): boolean {
+        return typeof str === 'string';
     }
 
     /**
@@ -24,9 +23,9 @@ class Util {
      * @param {any} data Any data
      * @returns {boolean}
      */
-    static isValue(data) {
+    static isValue(data: any): boolean {
         if (data === Infinity || data === -Infinity) return false;
-        if (typeof data === "undefined") return false;
+        if (typeof data === 'undefined') return false;
         return true;
     }
 
@@ -43,15 +42,14 @@ class Util {
      * // -> { key: "myitems", target: "items" }
      * @returns {KEY}
      */
-    static parseKey(key) {
-        if (!key || typeof key !== "string") return { key: undefined, target: undefined };
-        if (key.includes(".")) {
-            let spl = key.split(".");
-            let parsed = spl.shift();
-            let target = spl.join(".");
-            return { key: parsed, target };
-        }
-        return { key, target: undefined };
+    static parseKey(key: string): {
+        key: string | undefined;
+        target: string | undefined;
+    } {
+        if (typeof key !== 'string') return { key: undefined, target: undefined };
+
+        const [parsed, ...targets] = key.split(".");
+        return { key: parsed, target: targets.length ? targets.join(".") : undefined };
     }
 
     /**
@@ -62,9 +60,9 @@ class Util {
      * @example Util.sort("user_", {...}, { sort: ".data" });
      * @returns {any[]}
      */
-    static sort(key, data, ops) {
+    static sort(key: string, data: Array<any>, ops: object | any): any[] {
         if (!key || !data || !Array.isArray(data)) return [];
-        let arb = data.filter(i => i.ID.startsWith(key));
+        let arb = data.filter((i) => i.ID.startsWith(key));
         if (ops && ops.sort && typeof ops.sort === 'string') {
             if (ops.sort.startsWith('.')) ops.sort = ops.sort.slice(1);
             ops.sort = ops.sort.split('.');
@@ -81,11 +79,14 @@ class Util {
      * @example Util.setData("user.items", {...}, ["pen"]);
      * @returns {any}
      */
-    static setData(key, data, value) {
+    static setData(key: string, data: any, value: any): any {
         let parsed = this.parseKey(key);
-        if (typeof data === "object" && parsed.target) {
-            return _.set(data, parsed.target, value);
-        } else if (parsed.target) throw new Error("Cannot target non-object.", "TargetError");
+ 
+        if (parsed.target) {
+            if (typeof data !== 'object') throw new Error('Cannot target non-object.', 'TargetError');
+            data = _.set(data, parsed.target, value);
+        }
+
         return data;
     }
 
@@ -97,12 +98,12 @@ class Util {
      * @example Util.unsetData("user.items", {...});
      * @returns {any}
      */
-    static unsetData(key, data) {
+    static unsetData(key: string, data: any): any {
         let parsed = this.parseKey(key);
         let item = data;
-        if (typeof data === "object" && parsed.target) {
+        if (typeof data === 'object' && parsed.target) {
             _.unset(item, parsed.target);
-        } else if (parsed.target) throw new Error("Cannot target non-object.", "TargetError");
+        } else if (parsed.target) throw new Error('Cannot target non-object.', 'TargetError');
         return item;
     }
 
@@ -113,11 +114,11 @@ class Util {
      * @example Util.getData("user.items", {...});
      * @returns {any}
      */
-    static getData(key, data) {
+    static getData(key: string, data: any): any {
         let parsed = this.parseKey(key);
         if (parsed.target) data = _.get(data, parsed.target);
         return data;
     }
 }
 
-module.exports = Util;
+export default Util;
